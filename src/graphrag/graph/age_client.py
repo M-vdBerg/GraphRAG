@@ -28,7 +28,7 @@ from graphrag.graph.schema import ChunkNode, DocumentNode
 
 logger = logging.getLogger(__name__)
 
-GRAPH_NAME = "graphrag"
+GRAPH_NAME = "knowledge_graph"
 
 
 class AGEClient:

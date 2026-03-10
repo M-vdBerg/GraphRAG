@@ -16,7 +16,7 @@ async def _init_connection(conn: asyncpg.Connection) -> None:  # type: ignore[ty
     setting search_path explicitly keeps things predictable.
     """
     await conn.execute("LOAD 'age'")
-    await conn.execute("SET search_path = ag_catalog, graphrag, public")
+    await conn.execute("SET search_path = ag_catalog, knowledge_graph, graphrag, public")
 
 
 async def create_pool(settings: Settings) -> asyncpg.Pool:  # type: ignore[type-arg]

@@ -24,7 +24,7 @@ CREATE TABLE graphrag.chunks (
     position    INTEGER         NOT NULL,               -- ordinal within document (0-based)
     content     TEXT            NOT NULL,               -- raw markdown text of the chunk
     token_count INTEGER,                                -- approximate token count
-    -- BAAI/bge-large-en-v1.5 produces 1024-dimensional embeddings.
+    -- BAAI/bge-m3 produces 1024-dimensional embeddings.
     -- If you change EMBEDDING_MODEL to one with different dimensions,
     -- update this column type and recreate the index accordingly.
     embedding   vector(1024)    NOT NULL,

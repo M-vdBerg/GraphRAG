@@ -74,13 +74,13 @@ Key variables:
 | Variable | Default | Description |
 |---|---|---|
 | `POSTGRES_PASSWORD` | *(required)* | PostgreSQL password |
-| `EMBEDDING_MODEL` | `BAAI/bge-large-en-v1.5` | HuggingFace model ID |
+| `EMBEDDING_MODEL` | `BAAI/bge-m3` | HuggingFace model ID |
 | `EMBEDDING_DEVICE` | `cuda` | `cuda` or `cpu` |
 | `MCP_PORT` | `8000` | MCP server port |
 
 ## Embedding model
 
-Default: **`BAAI/bge-large-en-v1.5`** (1024-dim, asymmetric retrieval).
+Default: **`BAAI/bge-m3`** (1024-dim, multilingual, 100+ languages including German).
 Optimised for H100/H200/RTX 6000 Ada GPU hardware.
 
 If you change `EMBEDDING_MODEL` to a model with different output dimensions, update `vector(1024)` in `docker/postgres/init/02_schema.sql` accordingly and recreate the database volume.

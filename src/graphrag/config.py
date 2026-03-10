@@ -11,10 +11,10 @@ class Settings(BaseSettings):
     postgres_password: str  # required — no default
 
     # ── Embeddings ────────────────────────────────────────────────────────────
-    # BAAI/bge-large-en-v1.5 → 1024-dim, high quality, asymmetric retrieval
+    # BAAI/bge-m3 → 1024-dim, high quality, asymmetric retrieval
     # If you change this to a model with different output dimensions, you must
     # also update the vector(1024) column in 02_schema.sql and recreate the DB.
-    embedding_model: str = "BAAI/bge-large-en-v1.5"
+    embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cuda"   # "cpu" for CPU-only environments
     embedding_batch_size: int = 32
 

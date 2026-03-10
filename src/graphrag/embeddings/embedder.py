@@ -2,12 +2,16 @@
 
 BGE asymmetric retrieval
 ────────────────────────
-BAAI/bge-large-en-v1.5 uses *asymmetric* embeddings for retrieval:
+BGE English models (bge-large-en-v1.5, bge-base-en-v1.5, …) use asymmetric
+embeddings for retrieval:
   - Document chunks are embedded as-is (no prefix).
   - Queries must be prefixed with the instruction string below.
 
-Skipping the query prefix significantly degrades recall. The prefix is applied
-automatically in ``embed_query()``. Never use ``embed()`` for query strings.
+BGE-M3 (multilingual, 100+ languages incl. German) does NOT use a query
+prefix — both queries and passages are embedded identically.
+
+The correct prefix behaviour is selected automatically in ``embed_query()``
+based on the model name. Never call ``embed()`` with raw query strings.
 """
 
 from __future__ import annotations
@@ -24,7 +28,7 @@ _BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 class Embedder:
     def __init__(
         self,
-        model_name: str = "BAAI/bge-large-en-v1.5",
+        model_name: str = "BAAI/bge-m3",
         device: str = "cuda",
         batch_size: int = 32,
     ) -> None:
@@ -52,7 +56,7 @@ class Embedder:
         return [v.tolist() for v in vectors]
 
     def embed_query(self, text: str) -> list[float]:
-        """Embed a query string, applying the BGE retrieval prefix."""
+        """Embed a query string, applying a retrieval prefix where required."""
         prefixed = _bge_prefix(self._model_name, text)
         return self.embed([prefixed])[0]
 
@@ -62,7 +66,13 @@ class Embedder:
 
 
 def _bge_prefix(model_name: str, text: str) -> str:
-    """Apply query prefix for BGE-family models; pass through for others."""
-    if "bge" in model_name.lower():
+    """Apply query prefix where the model requires it.
+
+    - BGE English models (bge-large-en, bge-base-en, …): need the prefix.
+    - BGE-M3 (multilingual): symmetric — no prefix for either queries or docs.
+    - All other models: passed through unchanged.
+    """
+    name = model_name.lower()
+    if "bge" in name and "m3" not in name:
         return _BGE_QUERY_PREFIX + text
     return text

@@ -38,3 +38,8 @@ docker-compose.override.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# Docs folder — content is user data, not source code
+# The empty placeholder is kept so the folder exists in the repo
+docs/*
+!docs/.gitkeep

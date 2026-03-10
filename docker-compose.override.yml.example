@@ -27,3 +27,22 @@ services:
     volumes:
       - ./src:/app/src
       # - /path/to/hf_cache:/home/appuser/.cache/huggingface
+
+  # ── Apache AGE Viewer ──────────────────────────────────────────────────────
+  # Graph visualisation UI — built from source on first run (takes ~2 min).
+  # Access at http://localhost:3001 after `docker compose up age-viewer`.
+  #
+  # Connection details to enter in the browser UI:
+  #   Host:     postgres
+  #   Port:     5432
+  #   Database: graphrag
+  #   User:     graphrag
+  #   Password: (your POSTGRES_PASSWORD from .env)
+  age-viewer:
+    build:
+      context: https://github.com/apache/age-viewer.git#main
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    networks:
+      - internal

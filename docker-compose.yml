@@ -7,8 +7,8 @@ x-pg-env: &pg-env
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
 x-embedding-env: &embedding-env
-  EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
-  EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cuda}
+  EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
+  EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
   EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-32}
 
 # ─── Services ─────────────────────────────────────────────────────────────────
@@ -48,13 +48,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     networks:
       - internal
 
@@ -75,13 +68,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     networks:
       - internal
       - external
@@ -93,7 +79,5 @@ volumes:
 
 # ─── Networks ─────────────────────────────────────────────────────────────────
 networks:
-  internal:
-    internal: true   # no external access
-  external:
-    {}               # mcp is reachable from the host
+  internal: {}       # shared backend network; postgres port not exposed to host
+  external: {}       # mcp is reachable from the host

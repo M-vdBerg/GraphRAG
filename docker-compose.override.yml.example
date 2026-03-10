@@ -37,8 +37,13 @@ services:
   #   User:     graphrag
   #   Password: (your POSTGRES_PASSWORD from .env)
   age-viewer:
+    # Builds from ./docker/age-viewer/Dockerfile (Node 18, clones age-viewer from GitHub).
+    # First build takes ~2 min.
+    #
+    # Connection details to enter in the browser UI:
+    #   Host:     postgres   Port: 5432   DB: graphrag   User: graphrag
     build:
-      context: https://github.com/apache/age-viewer.git#main
+      context: ./docker/age-viewer
     restart: unless-stopped
     ports:
       - "3001:3000"

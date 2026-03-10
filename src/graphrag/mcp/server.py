@@ -57,10 +57,13 @@ register_tools(mcp, _state)
 
 
 def run() -> None:
-    mcp.run(
-        transport="sse",
+    import uvicorn
+
+    uvicorn.run(
+        mcp.sse_app(),
         host=settings.mcp_host,
         port=settings.mcp_port,
+        log_level="info",
     )
 
 

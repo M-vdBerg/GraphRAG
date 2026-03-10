@@ -11,19 +11,18 @@ import logging
 from typing import Annotated, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
 
 def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
-    """Register all tools on *mcp*, closing over *state* for DB/embedder access."""
+    """Register all tools on *mcp*, closing over *state* for DB/embedder access.
 
-    pool = state["pool"]
-    embedder = state["embedder"]
-    chunk_repo = state["chunk_repo"]
-    doc_repo = state["doc_repo"]
-    age = state["age"]
+    ``state`` is an empty dict at registration time — it is populated by the
+    server lifespan before any tool call can be made. Each tool accesses
+    ``state`` lazily at call time, not at registration time.
+    """
 
     # ── 1. search ─────────────────────────────────────────────────────────────
 
@@ -42,9 +41,9 @@ def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
 
         Returns ranked chunks with parent document metadata and similarity scores.
         """
-        query_vec = embedder.embed_query(query)
-        async with pool.acquire() as conn:
-            results = await chunk_repo.vector_search(
+        query_vec = state["embedder"].embed_query(query)
+        async with state["pool"].acquire() as conn:
+            results = await state["chunk_repo"].vector_search(
                 conn,
                 query_embedding=query_vec,
                 top_k=top_k,
@@ -75,11 +74,11 @@ def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
 
         Use ``list_documents`` to discover available doc_ids.
         """
-        async with pool.acquire() as conn:
-            doc = await doc_repo.get_by_id(conn, doc_id)
+        async with state["pool"].acquire() as conn:
+            doc = await state["doc_repo"].get_by_id(conn, doc_id)
             if doc is None:
                 return {"error": f"Document '{doc_id}' not found"}
-            chunks = await chunk_repo.get_by_doc(conn, doc_id)
+            chunks = await state["chunk_repo"].get_by_doc(conn, doc_id)
         return {
             "doc_id": doc.doc_id,
             "file_name": doc.file_name,
@@ -94,8 +93,8 @@ def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
     @mcp.tool()
     async def list_documents() -> list[dict[str, Any]]:
         """List all documents currently indexed in the graph."""
-        async with pool.acquire() as conn:
-            docs = await doc_repo.list_all(conn)
+        async with state["pool"].acquire() as conn:
+            docs = await state["doc_repo"].list_all(conn)
         return [
             {
                 "doc_id": d["doc_id"],
@@ -122,10 +121,10 @@ def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
 
         Results are deduplicated; the shortest hop count is reported for each.
         """
-        async with pool.acquire() as conn:
+        async with state["pool"].acquire() as conn:
             await conn.execute("LOAD 'age'")
-            await conn.execute("SET search_path = ag_catalog, graphrag, public")
-            results = await age.get_related_documents(conn, doc_id, depth, direction)
+            await conn.execute("SET search_path = ag_catalog, knowledge_graph, graphrag, public")
+            results = await state["age"].get_related_documents(conn, doc_id, depth, direction)
         return results
 
     # ── 5. get_chunk_context ──────────────────────────────────────────────────
@@ -142,12 +141,12 @@ def register_tools(mcp: FastMCP, state: dict[str, Any]) -> None:
         Returns the matched chunk plus up to *window* chunks before and after
         it within the same document, in document order.
         """
-        async with pool.acquire() as conn:
-            chunks = await chunk_repo.get_context_window(conn, chunk_id, window)
+        async with state["pool"].acquire() as conn:
+            chunks = await state["chunk_repo"].get_context_window(conn, chunk_id, window)
             if not chunks:
                 return {"error": f"Chunk '{chunk_id}' not found"}
             doc_id = chunks[0].get("doc_id") if isinstance(chunks[0], dict) else None
-            doc = await doc_repo.get_by_id(conn, doc_id) if doc_id else None
+            doc = await state["doc_repo"].get_by_id(conn, doc_id) if doc_id else None
 
         return {
             "doc_id": doc_id,

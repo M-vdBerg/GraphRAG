@@ -1,0 +1,40 @@
+# Environment / secrets
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.python-version
+
+# Testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# HuggingFace model cache
+hf_cache/
+
+# Docker override with local secrets
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db

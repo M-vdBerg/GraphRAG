@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Development overrides — copy to docker-compose.override.yml (gitignored)
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.override.yml is automatically merged by Docker Compose.
+# Use it to expose internal ports, bind-mount local source, and mount
+# a persistent HuggingFace model cache without committing secrets.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+  postgres:
+    # Expose Postgres on the host for direct psql / DBeaver access
+    ports:
+      - "5432:5432"
+
+  watcher:
+    volumes:
+      # Bind-mount the local docs/ folder so edits are picked up immediately
+      - ./docs:/docs
+      # Bind-mount source for live code changes without rebuilding
+      - ./src:/app/src
+      # Persist downloaded model weights across container restarts
+      # - /path/to/hf_cache:/home/appuser/.cache/huggingface
+
+  mcp:
+    volumes:
+      - ./src:/app/src
+      # - /path/to/hf_cache:/home/appuser/.cache/huggingface

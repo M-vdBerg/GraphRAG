@@ -1,0 +1,101 @@
+version: "3.9"
+
+# ─── Shared environment snippet ───────────────────────────────────────────────
+x-pg-env: &pg-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:-graphrag}
+  POSTGRES_USER: ${POSTGRES_USER:-graphrag}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+x-embedding-env: &embedding-env
+  EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-large-en-v1.5}
+  EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cuda}
+  EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-32}
+
+# ─── Services ─────────────────────────────────────────────────────────────────
+services:
+  postgres:
+    image: ghcr.io/${GITHUB_REPOSITORY:-yourorg/graphrag}/graphrag-postgres:${IMAGE_TAG:-latest}
+    build:
+      context: ./docker/postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-graphrag}
+      POSTGRES_USER: ${POSTGRES_USER:-graphrag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-graphrag} -d ${POSTGRES_DB:-graphrag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - internal
+
+  watcher:
+    image: ghcr.io/${GITHUB_REPOSITORY:-yourorg/graphrag}/graphrag-watcher:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./docker/watcher/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*pg-env, *embedding-env]
+      DOCS_PATH: /docs
+      WATCH_RECURSIVE: ${WATCH_RECURSIVE:-true}
+    volumes:
+      - docs_data:/docs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - internal
+
+  mcp:
+    image: ghcr.io/${GITHUB_REPOSITORY:-yourorg/graphrag}/graphrag-mcp:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./docker/mcp/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*pg-env, *embedding-env]
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: ${MCP_PORT:-8000}
+      SEARCH_TOP_K: ${SEARCH_TOP_K:-10}
+      SEARCH_MIN_SCORE: ${SEARCH_MIN_SCORE:-0.0}
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - internal
+      - external
+
+# ─── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  docs_data:
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  internal:
+    internal: true   # no external access
+  external:
+    {}               # mcp is reachable from the host

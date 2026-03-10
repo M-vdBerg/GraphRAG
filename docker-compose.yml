@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ─── Shared environment snippet ───────────────────────────────────────────────
 x-pg-env: &pg-env
   POSTGRES_HOST: postgres

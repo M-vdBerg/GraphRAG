@@ -6,8 +6,6 @@
 # a persistent HuggingFace model cache without committing secrets.
 # ─────────────────────────────────────────────────────────────────────────────
 
-version: "3.9"
-
 services:
   postgres:
     # Expose Postgres on the host for direct psql / DBeaver access

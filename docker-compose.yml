@@ -45,6 +45,7 @@ services:
       WATCH_RECURSIVE: ${WATCH_RECURSIVE:-true}
     volumes:
       - docs_data:/docs
+      - hf_cache:/home/appuser/.cache/huggingface
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,6 +66,8 @@ services:
       SEARCH_MIN_SCORE: ${SEARCH_MIN_SCORE:-0.0}
     ports:
       - "${MCP_PORT:-8000}:8000"
+    volumes:
+      - hf_cache:/home/appuser/.cache/huggingface
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,6 +79,7 @@ services:
 volumes:
   postgres_data:
   docs_data:
+  hf_cache:      # persists downloaded HuggingFace model weights across restarts
 
 # ─── Networks ─────────────────────────────────────────────────────────────────
 networks:

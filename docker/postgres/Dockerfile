@@ -2,6 +2,7 @@ FROM postgres:16
 
 # Build AGE from source (no official apt package for pg16 in all distros)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
         build-essential \
         git \
         postgresql-server-dev-16 \

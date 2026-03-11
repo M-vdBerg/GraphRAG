@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir --upgrade pip setuptools
 
 COPY pyproject.toml .
 COPY src/ ./src/
-# Install only the watcher extras (no MCP deps)
-RUN pip install --no-cache-dir ".[watcher]"
+# Install watcher + enricher extras (enricher runs as a one-shot command in this container)
+RUN pip install --no-cache-dir ".[watcher,enricher]"
 
 # ─── Stage 2: runtime ────────────────────────────────────────────────────────
 FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime

@@ -20,3 +20,11 @@ class ChunkNode:
     position: int
     content: str
     token_count: int | None
+
+
+@dataclass
+class EntityNode:
+    entity_id: str   # sha256(normalized|type)
+    name: str
+    type: str        # PERSON | ORG | LOCATION | SYSTEM | TECHNOLOGY | CONCEPT
+    normalized: str  # lowercase, singular

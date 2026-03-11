@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 
 import asyncpg
 
-from graphrag.graph.schema import ChunkNode, DocumentNode
+from graphrag.graph.schema import ChunkNode, DocumentNode, EntityNode
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +205,81 @@ class AGEClient:
                 "anchor": anchor,
                 "href": href,
             },
+        )
+
+    # ── Entity vertices ───────────────────────────────────────────────────────
+
+    async def upsert_entity(
+        self,
+        conn: asyncpg.Connection,  # type: ignore[type-arg]
+        entity: EntityNode,
+    ) -> None:
+        await self._cypher(
+            conn,
+            """
+            MERGE (e:Entity {entity_id: $entity_id})
+            SET e.name       = $name,
+                e.type       = $type,
+                e.normalized = $normalized
+            """,
+            {
+                "entity_id": entity.entity_id,
+                "name": entity.name,
+                "type": entity.type,
+                "normalized": entity.normalized,
+            },
+        )
+
+    async def create_mentions_edge(
+        self,
+        conn: asyncpg.Connection,  # type: ignore[type-arg]
+        chunk_id: str,
+        entity_id: str,
+    ) -> None:
+        await self._cypher(
+            conn,
+            """
+            MATCH (c:Chunk {chunk_id: $chunk_id}), (e:Entity {entity_id: $entity_id})
+            MERGE (c)-[:MENTIONS]->(e)
+            """,
+            {"chunk_id": chunk_id, "entity_id": entity_id},
+        )
+
+    async def delete_mentions_for_chunk(
+        self,
+        conn: asyncpg.Connection,  # type: ignore[type-arg]
+        chunk_id: str,
+    ) -> None:
+        """Remove all MENTIONS edges from a chunk (called before re-extraction)."""
+        await self._cypher(
+            conn,
+            """
+            MATCH (c:Chunk {chunk_id: $chunk_id})-[r:MENTIONS]->()
+            DELETE r
+            """,
+            {"chunk_id": chunk_id},
+        )
+
+    # ── Similarity edges ──────────────────────────────────────────────────────
+
+    async def create_similar_to_edge(
+        self,
+        conn: asyncpg.Connection,  # type: ignore[type-arg]
+        chunk_a: str,
+        chunk_b: str,
+        score: float,
+    ) -> None:
+        """Create SIMILAR_TO edges in both directions (idempotent via MERGE)."""
+        await self._cypher(
+            conn,
+            """
+            MATCH (a:Chunk {chunk_id: $chunk_a}), (b:Chunk {chunk_id: $chunk_b})
+            MERGE (a)-[r:SIMILAR_TO]->(b)
+            SET r.score = $score
+            MERGE (b)-[s:SIMILAR_TO]->(a)
+            SET s.score = $score
+            """,
+            {"chunk_a": chunk_a, "chunk_b": chunk_b, "score": score},
         )
 
     # ── Traversal queries ─────────────────────────────────────────────────────

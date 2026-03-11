@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     search_top_k: int = 10
     search_min_score: float = 0.0
 
+    # ── Enricher ──────────────────────────────────────────────────────────────
+    # OpenAI-compatible endpoint (LiteLLM, vLLM, Ollama, …)
+    enricher_base_url: str = "http://localhost:4000/v1"
+    enricher_api_key: str = "dummy"          # local inference needs no real key
+    enricher_model: str = "mistral/mistral-small-24b"
+    enricher_concurrency: int = 4            # parallel LLM requests
+    similar_to_threshold: float = 0.82       # cosine similarity cutoff
+    similar_to_max_per_chunk: int = 5        # max SIMILAR_TO edges per chunk
+
     @field_validator("embedding_device")
     @classmethod
     def validate_device(cls, v: str) -> str:

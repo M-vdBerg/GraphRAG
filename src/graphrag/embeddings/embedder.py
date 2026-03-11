@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 
+import torch
 from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
@@ -30,10 +31,17 @@ class Embedder:
         self,
         model_name: str = "BAAI/bge-m3",
         device: str = "cuda",
-        batch_size: int = 32,
+        batch_size: int = 16,
+        precision: str = "fp16",
     ) -> None:
-        logger.info("Loading embedding model '%s' on device '%s'", model_name, device)
-        self._model = SentenceTransformer(model_name, device=device)
+        dtype = torch.float16 if precision == "fp16" and device != "cpu" else torch.float32
+        logger.info(
+            "Loading embedding model '%s' on device '%s' (%s)",
+            model_name, device, precision,
+        )
+        self._model = SentenceTransformer(
+            model_name, device=device, model_kwargs={"torch_dtype": dtype}
+        )
         self._batch_size = batch_size
         self._model_name = model_name
 

@@ -38,6 +38,7 @@ async def lifespan(_app: object) -> AsyncIterator[None]:
         model_name=settings.embedding_model,
         device=settings.embedding_device,
         batch_size=settings.embedding_batch_size,
+        precision=settings.embedding_precision,
     )
     _state["chunk_repo"] = ChunkRepository()
     _state["doc_repo"] = DocumentRepository()

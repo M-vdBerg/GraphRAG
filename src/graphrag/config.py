@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # also update the vector(1024) column in 02_schema.sql and recreate the DB.
     embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cuda"   # "cpu" for CPU-only environments
-    embedding_batch_size: int = 32
+    embedding_batch_size: int = 16
+    embedding_precision: str = "fp16"  # "fp32" or "fp16" — fp16 halves VRAM usage
 
     # ── Watcher ───────────────────────────────────────────────────────────────
     docs_path: str = "/docs"
@@ -44,6 +45,13 @@ class Settings(BaseSettings):
     def validate_device(cls, v: str) -> str:
         if v not in {"cuda", "cpu", "mps"}:
             raise ValueError("embedding_device must be 'cuda', 'cpu', or 'mps'")
+        return v
+
+    @field_validator("embedding_precision")
+    @classmethod
+    def validate_precision(cls, v: str) -> str:
+        if v not in {"fp32", "fp16"}:
+            raise ValueError("embedding_precision must be 'fp32' or 'fp16'")
         return v
 
     model_config = SettingsConfigDict(
